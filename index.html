@@ -85,11 +85,17 @@
     <div id="productModal" class="fixed inset-0 z-[60] bg-forest/20 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] shadow-2xl relative no-scrollbar">
             <div class="flex flex-col lg:flex-row">
+                
                 <div class="w-full lg:w-1/2 relative bg-mint h-80 lg:h-auto min-h-[400px]">
-                    <div id="modalSlider" class="h-full w-full flex transition-transform duration-500"></div>
+                    <div id="modalSlider" class="h-full w-full flex"></div>
+                    
+                    <div id="sliderArrows" class="absolute inset-0 flex items-center justify-between px-4 hidden pointer-events-none">
+                        <button onclick="changeSlide(-1)" class="w-10 h-10 rounded-full bg-white/90 text-forest shadow-lg flex items-center justify-center pointer-events-auto hover:bg-white transition-all"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="changeSlide(1)" class="w-10 h-10 rounded-full bg-white/90 text-forest shadow-lg flex items-center justify-center pointer-events-auto hover:bg-white transition-all"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
                 </div>
 
-                <div class="w-full lg:w-1/2 p-8 lg:p-12">
+                <div class="w-full lg:w-1/2 p-8 lg:p-12 relative">
                     <button onclick="closeModal('productModal')" class="absolute top-6 right-6 text-forest/20 hover:text-forest transition-colors"><i class="fa-solid fa-xmark text-2xl"></i></button>
                     <h2 id="modalTitle" class="text-3xl font-extrabold text-forest mb-4 tracking-tighter"></h2>
                     <p id="modalPriceBase" class="text-2xl font-bold text-forest/40 mb-6"></p>
@@ -149,8 +155,15 @@
             // PISOS SÃO TOMÉ
             { id: 1, name: "Piso São Tomé Branco 37x18cm", category: "Pisos", price: 170.00, images: ["images/pisosaotome37x18.jpeg"] },
             { id: 2, name: "Piso São Tomé Branco 30x30cm", category: "Pisos", price: 170.00, images: ["images/pedramoledobranca.PNG"] },
-            { id: 3, name: "Piso São Tomé Branco 47x18cm", category: "Pisos", price: 180.00, images: ["images/pisosaotome37x18.jpeg,images/pisosaotome37x18.jpeg"] },
-            { id: 4, name: "Piso São Tomé Amarelo 37x18cm", category: "Pisos", price: 170.00, images: [""] },
+            
+            // ATENÇÃO AQUI: Corrigi o array de imagens do ID 3!
+            { id: 3, name: "Piso São Tomé Branco 47x18cm", category: "Pisos", price: 180.00, images: [
+                "images/pisosaotome37x18.jpeg", 
+                "https://images.unsplash.com/photo-1584622781564-1d9876a13d1a?q=80&w=800" // Coloquei uma foto de exemplo da internet aqui para você ver a diferença
+            ]},
+            
+            // O ID 4 estava com a imagem vazia, coloquei um placeholder para o layout não quebrar
+            { id: 4, name: "Piso São Tomé Amarelo 37x18cm", category: "Pisos", price: 170.00, images: ["https://placehold.co/800x800/2D4035/FFFFFF?text=Sem+Foto"] },
             { id: 5, name: "Piso São Tomé Amarelo 30x30cm", category: "Pisos", price: 170.00, images: ["https://images.unsplash.com/photo-1504198266304-483652af8ad6?q=80&w=800"] },
             { id: 6, name: "Piso São Tomé Amarelo 47x18cm", category: "Pisos", price: 180.00, images: ["https://images.unsplash.com/photo-1551029170-136159518063?q=80&w=800"] },
             { id: 7, name: "Caco Branco Aré", category: "Pisos", price: 189.00, images: ["images/brancoare.jpg"] },
@@ -179,6 +192,10 @@
         let cart = [];
         let currentItem = null;
         let selectedExtras = new Set();
+        
+        // VARIÁVEIS NOVAS PARA CONTROLAR AS IMAGENS
+        let currentImageIndex = 0;
+        let currentImages = [];
 
         function init() {
             renderProducts(CATALOG_ITEMS);
@@ -212,6 +229,11 @@
         function openProduct(id) {
             const item = CATALOG_ITEMS.find(i => i.id === id);
             currentItem = { ...item, qty: 1.0 };
+            
+            // PREPARA AS IMAGENS DO PRODUTO ATUAL
+            currentImages = item.images;
+            currentImageIndex = 0; 
+
             selectedExtras.clear();
             document.getElementById('modalTitle').innerText = item.name;
             document.getElementById('modalPriceBase').innerText = `R$ ${item.price.toFixed(2)} / m²`;
@@ -230,9 +252,31 @@
                 </label>
             `).join('');
 
-            document.getElementById('modalSlider').innerHTML = `<img src="${item.images[0]}" class="h-full w-full object-cover">`;
+            updateSliderImage(); // CHAMA A NOVA FUNÇÃO DE IMAGEM
             updateModalTotal();
             document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        // NOVA FUNÇÃO: Atualiza a foto mostrada e esconde/mostra as setas
+        function updateSliderImage() {
+            document.getElementById('modalSlider').innerHTML = `<img src="${currentImages[currentImageIndex]}" class="h-full w-full object-cover">`;
+            
+            const arrows = document.getElementById('sliderArrows');
+            if (currentImages.length > 1) {
+                arrows.classList.remove('hidden'); // Mostra setas se tiver + de 1 foto
+            } else {
+                arrows.classList.add('hidden'); // Esconde setas
+            }
+        }
+
+        // NOVA FUNÇÃO: Troca a foto ao clicar na seta
+        function changeSlide(step) {
+            currentImageIndex += step;
+            // Se passar da última, volta pra primeira. Se voltar antes da primeira, vai pra última.
+            if (currentImageIndex >= currentImages.length) currentImageIndex = 0;
+            if (currentImageIndex < 0) currentImageIndex = currentImages.length - 1;
+            
+            updateSliderImage();
         }
 
         function toggleExtra(id) {
